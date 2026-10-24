@@ -302,11 +302,11 @@
   .rec-head{display:flex;align-items:center;gap:14px;width:100%}
   .rec-head .rec-info{flex:1;min-width:0}
   .exlist{margin-top:6px;display:flex;flex-direction:column;gap:4px;width:100%}
-  .ex-item{display:flex;align-items:center;gap:6px;background:#FFF7F9;border-radius:8px;padding:5px 7px;width:100%;box-sizing:border-box}
-  .ex-item-name{font-size:12px;font-weight:600;color:#5C3A45;flex:0 0 auto;max-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .ex-item-sets{display:flex;flex-wrap:nowrap;gap:4px;flex:1 1 auto;min-width:0;justify-content:flex-end;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:1px}
+  .ex-item{display:flex;align-items:flex-start;gap:8px;background:#FFF7F9;border-radius:8px;padding:6px 8px;width:100%;box-sizing:border-box}
+  .ex-item-name{font-size:12px;font-weight:600;color:#5C3A45;line-height:1.6;flex:0 0 auto;max-width:34%;white-space:normal;word-break:break-word}
+  .ex-item-sets{display:flex;flex-wrap:wrap;gap:5px;flex:1 1 auto;min-width:0;justify-content:flex-end}
   .ex-item-sets::-webkit-scrollbar{display:none}
-  .set-pill{display:inline-block;flex:0 0 auto;font-size:11px;line-height:1;padding:3px 5px;border-radius:5px;background:#FFD1DC;color:#8E3B58;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .set-pill{display:inline-block;flex:0 0 auto;font-size:11px;line-height:1;padding:3px 6px;border-radius:5px;background:#FFD1DC;color:#8E3B58;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
   .set-pill.warm{background:#FFF0E0;color:#B4803E;font-weight:500}
   .ex-more{font-size:11px;color:#9A858E;padding:1px 2px 0}
   .rec-col .rec-del{align-self:flex-start;flex:none}
@@ -378,6 +378,31 @@
   .cheat-ico{flex:none}
   .cheat-food{flex:1;min-width:0;color:#5C3A45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .cheat-date{flex:none;font-size:11px;color:#B9A3AC}
+
+  /* ---------- 無氧卡片：動作區鋪滿整行 ---------- */
+  .rec-row{align-items:stretch}
+  .rec-col{width:100%;flex:1 1 auto}
+  .rec-head{display:flex;align-items:center;gap:10px;width:100%}
+  .rec-head .rec-info{flex:1;min-width:0}
+  .rec-head .rec-del{align-self:center;margin:0;flex:0 0 auto}
+  .exlist{margin-top:6px;display:flex;flex-direction:column;gap:5px;width:100%}
+  .ex-item{width:100%;box-sizing:border-box}
+  .ex-item-sets{display:flex;flex-wrap:wrap;gap:5px;width:100%}
+  .set-pill{font-size:12px;padding:4px 7px;border-radius:6px}
+
+  /* ---------- 日曆詳情（可編輯） ---------- */
+  .det-entry{padding:9px 0;border-bottom:1px solid #FFF0F4}
+  .det-name{font-size:14px;color:#3F3238}
+  .det-acts{display:flex;gap:8px;margin-top:6px}
+  .det-btn{border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer}
+  .det-btn.edit{background:#FFF0F4;color:#A8506A}
+  .det-btn.del{background:#FEF2F2;color:#DC2626}
+  .det-btn:active{opacity:.7}
+  .det-add{display:flex;gap:8px;margin-top:12px}
+  .det-add-btn{flex:1;border:1.5px dashed #F2BDCD;background:#FFF7F9;color:#C2607C;
+    border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer}
+  .det-add-btn:active{background:#FFF0F4}
+  .det-add-btn:disabled{opacity:.4;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -672,6 +697,7 @@ function renderHome(){
               <div class="rec-title">力量訓練<span class="kind strength">無氧</span></div>
               <div class="sub">${exs.length} 個動作 · ${entrySets(e)} 組 · 總重 ${Math.round(entryVolume(e))} kg</div>
             </div>
+            <button class="rec-del" data-delentry="${e.id}" aria-label="刪除">🗑</button>
           </div>
           <div class="exlist">
             ${shown.map(x=>`
@@ -685,7 +711,6 @@ function renderHome(){
             ${rest>0?`<div class="ex-more">仲有 ${rest} 個動作…</div>`:''}
           </div>
         </div>
-        <button class="rec-del" data-delentry="${e.id}" aria-label="刪除">🗑</button>
       </div>`;}).join('')}
   </div>` : ''}
 
@@ -708,8 +733,8 @@ function renderHome(){
 
   `;
 
-  app.querySelector('#goC').onclick=()=>{ state.editing=null; state.kcalInput=''; state.note=''; goTab('cardio'); };
-  app.querySelector('#goS').onclick=()=>{ startStrength([]); };
+  app.querySelector('#goC').onclick=()=>{ state.editDate=state.today; state.editing=null; state.kcalInput=''; state.note=''; goTab('cardio'); };
+  app.querySelector('#goS').onclick=()=>{ state.editDate=state.today; startStrength([]); };
   app.querySelectorAll('[data-tpl]').forEach(b=>b.onclick=()=>{
     const tp=store.templates()[+b.dataset.tpl];
     if(tp) startStrength(tp.exercises);
@@ -717,6 +742,7 @@ function renderHome(){
   app.querySelectorAll('[data-edit]').forEach(el=>el.onclick=()=>{
     const e=entries.find(x=>x.id===el.dataset.edit);
     if(!e)return;
+    state.editDate=state.today;
     if(e.type==='cardio'){
       state.sport=e.sport; state.dur=e.durationMin; state.kcalInput=e.calories||'';
       state.intensity=e.intensity||2; state.note=e.note||''; state.editing=e.id; goTab('cardio');
@@ -736,10 +762,10 @@ function renderHome(){
       try {
         const ok = await uiConfirm('刪除「' + label + '」？');
         if(!ok) return;
-        const cur = store.get(state.today);
+        const cur = store.get(state.editDate);
         if(cur){
           cur.entries = (cur.entries||[]).filter(x=>x.id!==id);
-          if(cur.entries.length) store.put(cur); else store.del(state.today);
+          if(cur.entries.length) store.put(cur); else store.del(state.editDate);
         }
         toast('已刪除');
         renderHome();
@@ -749,7 +775,8 @@ function renderHome(){
 }
 
 /* 用範本/已有記錄開啟一次無氧錄入；範本裡的重量回填「上次訓練」 */
-function startStrength(exList, minutes){
+function startStrength(exList, minutes, date){
+  if(date) state.editDate=date;
   const hist=historyMap(store.map());
   state.exs=(exList||[]).map(x=>{
     const h=hist[x.exId];
@@ -817,7 +844,7 @@ function renderCardio(){
   app.querySelector('#save').onclick=()=>{
     const dur=Math.max(1,Math.round(+state.dur||0));
     if(!dur){toast('先填時長');return;}
-    const s=store.get(state.today)||{date:state.today,entries:[]};
+    const s=store.get(state.editDate)||{date:state.editDate,entries:[]};
     const entry={id:state.editing||'c'+Date.now(),type:'cardio',sport:state.sport,durationMin:dur,
       intensity:state.intensity,note:state.note||'',calories:(+state.kcalInput||kcal(spOf(state.sport).met,dur))};
     s.entries=(s.entries||[]).some(e=>e.id===state.editing)
@@ -832,7 +859,7 @@ function renderCardio(){
   bindDelete(app.querySelector('#del'), {
     editing: () => state.editing,
     confirmText: '刪除這條有氧記錄？',
-    onDelete: (id) => { const s=store.get(state.today); if(s){ s.entries=(s.entries||[]).filter(e=>e.id!==id); store.put(s); } }
+    onDelete: (id) => { const s=store.get(state.editDate); if(s){ s.entries=(s.entries||[]).filter(e=>e.id!==id); store.put(s); } }
   });
 }
 
@@ -922,7 +949,7 @@ function renderStrength(){
       sets:x.sets.map(s=>({weightKg:+s.w||0,reps:+s.r||0,isWarmup:!!s.warm}))}));
     if(!exercises.length){ toast('先加動作'); return; }
     const mins=Math.max(1,+state.minutes||45);
-    const s=store.get(state.today)||{date:state.today,entries:[]};
+    const s=store.get(state.editDate)||{date:state.today,entries:[]};
     const entry={id:state.editing||'s'+Date.now(),type:'strength',durationMin:mins,exercises,calories:kcal(5,mins)};
     s.entries=(s.entries||[]).some(e=>e.id===state.editing)
       ? s.entries.map(e=>e.id===state.editing?entry:e)
@@ -936,7 +963,7 @@ function renderStrength(){
   bindDelete(app.querySelector('#del'), {
     editing: () => state.editing,
     confirmText: '刪除這次記錄？',
-    onDelete: (id) => { const s=store.get(state.today); if(s){ s.entries=(s.entries||[]).filter(e=>e.id!==id); store.put(s); } }
+    onDelete: (id) => { const s=store.get(state.editDate); if(s){ s.entries=(s.entries||[]).filter(e=>e.id!==id); store.put(s); } }
   });
 
   if(state.libOpen) renderLib(hist);
@@ -1026,8 +1053,6 @@ function renderStats(){
 
   <div class="card">
     <div class="row"><div class="title">個人記錄 e1RM</div><span class="sub">自己填</span></div>
-    <div class="sub" style="margin-top:6px;line-height:1.6">記錄動作嘅估算最大重量（Estimated 1RM），方便睇進度。</div>
-
     <div class="pr-list">
       ${myPrs.length ? myPrs.map((pr,idx)=>`
         <div class="pr-item">
@@ -1145,13 +1170,32 @@ function renderCal(){
       ${(x.s&&x.s.entries&&x.s.entries.length)?`<div class="dots">${x.s.entries.some(e=>e.type==='cardio')?'<span class="d c"></span>':''}${x.s.entries.some(e=>e.type==='strength')?'<span class="d s"></span>':''}</div>`:''}</div>`).join('')}</div>
     <div class="sub" style="text-align:center;margin-top:10px">● 粉紅 = 有氧　● 深粉 = 無氧　撳日子睇詳情</div>
   </div>
-  ${det?`<div class="card"><div class="row"><b>${det.date}</b><span class="sub">${det.sum.min} 分鐘 · ${det.sum.cal} kcal</span></div>
-    ${det.entries.map(e=>`<div style="padding:10px 0;border-bottom:1px solid #f8edf3">
-      <div class="row"><span>${e.type==='cardio'?spOf(e.sport).icon+' '+spOf(e.sport).name:'🏋️ 力量訓練'}</span>
-        <b class="kal">${e.type==='cardio'?e.durationMin+' 分鐘 · '+e.calories+' kcal':entrySets(e)+' 組 · '+Math.round(entryVolume(e))+' kg'}</b></div>
-      ${e.type==='strength'?`<div class="exlines">${e.exercises.map(x=>`<div class="exline"><span>${x.name}</span><span>${x.sets.map(raw=>{const st=normSet(raw);return (st.warm?'(熱身)':'')+st.w+'×'+st.r}).join('  ')}</span></div>`).join('')}</div>`:''}
-    </div>`).join('')}
-    <button class="ghost-btn" id="delDay" style="margin-top:10px;border-color:#fecaca;color:#dc2626">刪除成日記錄</button></div>`:''}`;
+  ${det?`<div class="card">
+    <div class="row">
+      <b>${det.date}${det.date===state.today?' <span class="sub">（今日）</span>':''}</b>
+      <span class="sub">${det.sum.min} 分鐘 · ${det.sum.cal} kcal</span>
+    </div>
+
+    ${det.entries.length ? det.entries.map(e=>`
+      <div class="det-entry">
+        <div class="row">
+          <span class="det-name">${e.type==='cardio'?spOf(e.sport).icon+' '+spOf(e.sport).name:'🏋️ 力量訓練'}</span>
+          <b class="kal">${e.type==='cardio'?e.durationMin+' 分鐘 · '+e.calories+' kcal':entrySets(e)+' 組 · '+Math.round(entryVolume(e))+' kg'}</b>
+        </div>
+        ${e.type==='strength'?`<div class="exlines">${e.exercises.map(x=>`<div class="exline"><span>${x.name}</span><span>${x.sets.map(raw=>{const st=normSet(raw);return (st.warm?'熱身 ':'')+st.w+'×'+st.r}).join('  ')}</span></div>`).join('')}</div>`:''}
+        <div class="det-acts">
+          <button class="det-btn edit" data-dedit="${e.id}" data-dtype="${e.type}">修改</button>
+          <button class="det-btn del" data-ddel="${e.id}">刪除</button>
+        </div>
+      </div>`).join('')
+    : `<div class="sub" style="text-align:center;padding:10px 0">呢日仲未有記錄</div>`}
+
+    <div class="det-add">
+      <button class="det-add-btn" id="addCardio" ${det.date>state.today?'disabled':''}>🏃 加有氧</button>
+      <button class="det-add-btn strength" id="addStrength" ${det.date>state.today?'disabled':''}>🏋️ 加無氧</button>
+    </div>
+    ${det.entries.length?`<button class="ghost-btn" id="delDay" style="margin-top:10px;border-color:#fecaca;color:#dc2626;padding:9px;font-size:13px">刪除整日記錄</button>`:''}
+  </div>` : ''}`;
   app.querySelector('#prev').onclick=()=>{state.m--;if(state.m<1){state.m=12;state.y--}state.detail=null;render()};
   app.querySelector('#next').onclick=()=>{state.m++;if(state.m>12){state.m=1;state.y++}state.detail=null;render()};
 
@@ -1172,9 +1216,56 @@ function renderCal(){
       render();
     } finally { delete btn.dataset.busy; }
   });
-  app.querySelectorAll('[data-k]').forEach(el=>el.onclick=()=>{const s=store.get(el.dataset.k);
-    if(!s||!s.entries||!s.entries.length)return toast('這天沒有訓練');
-    state.detail={date:el.dataset.k,entries:s.entries,sum:summarize(s)};render();window.scrollTo(0,99999)});
+  app.querySelectorAll('[data-k]').forEach(el=>el.onclick=()=>{
+    const k=el.dataset.k;
+    if(k>state.today) return toast('未到嘅日子唔可以記錄');
+    const s=store.get(k);
+    state.detail={date:k,entries:(s&&s.entries)||[],sum:summarize(s||{entries:[]})};
+    render();window.scrollTo(0,99999);
+  });
+  // 詳情：修改單條記錄
+  app.querySelectorAll('[data-dedit]').forEach(btn=>btn.addEventListener('click',()=>{
+    const id=btn.dataset.dedit, type=btn.dataset.dtype;
+    const rec=store.get(det.date); const e=((rec&&rec.entries)||[]).find(x=>x.id===id);
+    if(!e) return;
+    state.editDate=det.date; state.editing=id;
+    if(type==='cardio'){
+      state.sport=e.sport; state.dur=e.durationMin; state.kcalInput=e.calories||'';
+      state.intensity=e.intensity||2; state.note=e.note||''; goTab('cardio');
+    } else {
+      startStrength(e.exercises, e.durationMin, det.date);
+    }
+  }));
+
+  // 詳情：刪除單條記錄
+  app.querySelectorAll('[data-ddel]').forEach(btn=>btn.addEventListener('click', async function(ev){
+    if(btn.dataset.busy==='1') return;
+    btn.dataset.busy='1';
+    try{
+      const ok=await uiConfirm('刪除呢條記錄？');
+      if(!ok) return;
+      const rec=store.get(det.date);
+      if(rec){
+        rec.entries=(rec.entries||[]).filter(x=>x.id!==btn.dataset.ddel);
+        if(rec.entries.length) store.put(rec); else store.del(det.date);
+      }
+      const rec2=store.get(det.date);
+      state.detail={date:det.date,entries:(rec2&&rec2.entries)||[],sum:summarize(rec2||{entries:[]})};
+      toast('已刪除'); render();
+    } finally { delete btn.dataset.busy; }
+  }));
+
+  // 詳情：補記錄（有氧 / 無氧）
+  const addC=app.querySelector('#addCardio');
+  if(addC) addC.addEventListener('click',()=>{
+    state.editDate=det.date; state.editing=null; state.kcalInput=''; state.note=''; state.today_orig=state.today;
+    goTab('cardio');
+  });
+  const addS=app.querySelector('#addStrength');
+  if(addS) addS.addEventListener('click',()=>{
+    state.editDate=det.date; state.editing=null; startStrength([], 45, det.date);
+  });
+
   if(app.querySelector('#delDay'))app.querySelector('#delDay').addEventListener('click', async function(ev){
     const btn = ev.currentTarget;
     if(btn.dataset.busy === '1') return;
